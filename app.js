@@ -397,13 +397,21 @@ class AccountingSystem {
                 const profitStatus = invoice.totalProfit >= 0 ? 'profit' : 'loss';
                 const profitText = invoice.totalProfit >= 0 ? 'سود' : 'زیان';
                 return `
-                    <div class="item-card" onclick="app.showInvoiceDetails('sales', '${invoice.id}')">
+                    <div class="item-card">
                         <div class="item-card-header">
-                            <h3 class="item-title">فاکتور ${invoice.id.slice(-6)}</h3>
-                            <span class="item-amount">${this.formatCurrency(invoice.totalAmount)}</span>
+                            <h3 class="item-title" onclick="app.showInvoiceDetails('sales', '${invoice.id}')">فاکتور ${invoice.id.slice(-6)}</h3>
+                            <div class="item-actions">
+                                <button class="btn-icon" onclick="app.editSalesInvoice('${invoice.id}')" title="ویرایش">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-icon btn-danger" onclick="app.deleteSalesInvoice('${invoice.id}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <span class="item-amount">${this.formatCurrency(invoice.totalAmount)}</span>
+                            </div>
                         </div>
                         <div class="item-subtitle">
-                            <span>${this.getPersianDateLong(date)}</span>
+                            <span onclick="app.showInvoiceDetails('sales', '${invoice.id}')">${this.getPersianDateLong(date)}</span>
                             <span class="item-status ${profitStatus}">${profitText}: ${this.formatCurrency(invoice.totalProfit)}</span>
                         </div>
                     </div>
@@ -1086,6 +1094,236 @@ class AccountingSystem {
         productsSection.appendChild(newItem);
     }
 
+    // Sales Invoice Management
+    editSalesInvoice(invoiceId) {
+        const invoice = this.data.salesInvoices.find(i => i.id === invoiceId);
+        if (!invoice) {
+            this.showToast('فاکتور یافت نشد', 'error');
+            return;
+        }
+
+        const modal = document.getElementById('modalOverlay');
+        const title = document.getElementById('modalTitle');
+        const content = document.getElementById('modalContent');
+        
+        title.textContent = 'ویرایش فاکتور فروش';
+        
+        const inventory = this.getInventory();
+        const availableProducts = Object.values(inventory).filter(item => item.currentStock > 0);
+        const productsOptions = availableProducts.map(item => 
+            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock} - خرید: ${this.formatCurrency(item.product.purchasePrice)}</option>`
+        ).join('');
+        
+        const productsHTML = invoice.products.map((item, index) => `
+            <div class="item-card" style="margin-bottom: var(--space-sm);">
+                <div class="input-group">
+                    <label>محصول ${index + 1}</label>
+                    <select name="productId_${index}" data-index="${index}" required>
+                        <option value="">انتخاب کنید</option>
+                        ${availableProducts.map(p => 
+                            `<option value="${p.product.id}" ${p.product.id === item.productId ? 'selected' : ''}>
+                                ${p.product.name} - موجودی: ${p.currentStock} - خرید: ${this.formatCurrency(p.product.purchasePrice)}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
+                    <div class="input-group" style="flex: 1;">
+                        <label>تعداد</label>
+                        <input type="number" name="quantity_${index}" value="${item.quantity}" min="1" max="${availableProducts.find(p => p.product.id === item.productId)?.currentStock || 0}" required>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>قیمت فروش</label>
+                        <input type="number" name="sellingPrice_${index}" value="${item.sellingPrice}" step="0.01" required>
+                    </div>
+                </div>
+                <div class="input-group" style="margin-top: var(--space-sm);">
+                    <label>توضیحات</label>
+                    <textarea name="description_${index}" rows="2">${item.description || ''}</textarea>
+                </div>
+                <div style="text-align: center; margin-top: var(--space-sm);">
+                    <button type="button" class="btn-secondary" onclick="app.removeSalesInvoiceItem(this, ${index})" style="color: var(--error);">
+                        <i class="fas fa-trash"></i> حذف این محصول
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        content.innerHTML = `
+            <form id="editSalesInvoiceForm">
+                <div class="input-group">
+                    <label>تاریخ</label>
+                    <input type="date" name="date" value="${invoice.date}" required>
+                </div>
+                <div style="margin: var(--space-lg) 0;">
+                    <h4>محصولات فاکتور</h4>
+                    ${productsHTML}
+                </div>
+                <button type="button" class="btn-secondary" onclick="app.addSalesInvoiceItem()" style="margin-bottom: var(--space-md);">
+                    <i class="fas fa-plus"></i> افزودن محصول
+                </button>
+                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+                    <button type="submit" class="btn-primary" style="flex: 1;">ذخیره تغییرات</button>
+                    <button type="button" class="btn-secondary" data-action="close-modal" style="flex: 1;">انصراف</button>
+                </div>
+            </form>
+        `;
+        
+        modal.classList.add('active');
+        
+        // Set up form submission
+        content.querySelector('#editSalesInvoiceForm').addEventListener('submit', (e) => {
+            this.handleEditSalesInvoiceSubmit(e, invoiceId);
+        });
+    }
+
+    handleEditSalesInvoiceSubmit(e, invoiceId) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const date = formData.get('date');
+        
+        // Collect all products
+        const products = [];
+        const invoice = this.data.salesInvoices.find(i => i.id === invoiceId);
+        const inventory = this.getInventory();
+        
+        invoice.products.forEach((item, index) => {
+            const productId = formData.get(`productId_${index}`);
+            const quantity = parseInt(formData.get(`quantity_${index}`));
+            const sellingPrice = parseFloat(formData.get(`sellingPrice_${index}`));
+            const description = formData.get(`description_${index}`);
+            
+            if (productId && quantity > 0 && sellingPrice > 0) {
+                const availableProduct = inventory[productId];
+                if (availableProduct && availableProduct.currentStock >= quantity) {
+                    const product = availableProduct.product;
+                    const totalAmount = quantity * sellingPrice;
+                    const totalProfit = quantity * (sellingPrice - product.purchasePrice);
+                    
+                    products.push({
+                        productId: productId,
+                        productName: product.name,
+                        quantity: quantity,
+                        purchasePrice: product.purchasePrice,
+                        sellingPrice: sellingPrice,
+                        totalPrice: totalAmount,
+                        profit: totalProfit,
+                        description: description
+                    });
+                }
+            }
+        });
+        
+        if (products.length === 0) {
+            this.showToast('حداقل یک محصول معتبر وارد کنید', 'error');
+            return;
+        }
+        
+        const totalAmount = products.reduce((sum, item) => sum + item.totalPrice, 0);
+        const totalProfit = products.reduce((sum, item) => sum + item.profit, 0);
+        
+        // Update invoice
+        const invoiceIndex = this.data.salesInvoices.findIndex(i => i.id === invoiceId);
+        if (invoiceIndex !== -1) {
+            this.data.salesInvoices[invoiceIndex].date = date;
+            this.data.salesInvoices[invoiceIndex].products = products;
+            this.data.salesInvoices[invoiceIndex].totalAmount = totalAmount;
+            this.data.salesInvoices[invoiceIndex].totalProfit = totalProfit;
+            this.data.salesInvoices[invoiceIndex].updatedAt = new Date().toISOString();
+            
+            this.saveData();
+            this.showToast('فاکتور فروش با موفقیت به‌روزرسانی شد', 'success');
+            this.hideModal();
+            
+            // Refresh displays
+            setTimeout(() => {
+                this.renderSalesInvoices();
+                this.renderInventory();
+            }, 300);
+        } else {
+            this.showToast('خطا در به‌روزرسانی فاکتور', 'error');
+        }
+    }
+
+    deleteSalesInvoice(invoiceId) {
+        if (!confirm('آیا مطمئن هستید که می‌خواهید این فاکتور فروش را حذف کنید؟')) {
+            return;
+        }
+        
+        const invoice = this.data.salesInvoices.find(i => i.id === invoiceId);
+        if (!invoice) {
+            this.showToast('فاکتور یافت نشد', 'error');
+            return;
+        }
+        
+        // Remove invoice
+        this.data.salesInvoices = this.data.salesInvoices.filter(i => i.id !== invoiceId);
+        
+        this.saveData();
+        this.showToast('فاکتور فروش با موفقیت حذف شد', 'success');
+        
+        // Refresh displays
+        this.renderSalesInvoices();
+        this.renderInventory();
+    }
+
+    removeSalesInvoiceItem(button, index) {
+        button.closest('.item-card').remove();
+    }
+
+    addSalesInvoiceItem() {
+        const inventory = this.getInventory();
+        const availableProducts = Object.values(inventory).filter(item => item.currentStock > 0);
+        
+        if (availableProducts.length === 0) {
+            this.showToast('هیچ محصولی برای فروش موجود نیست', 'error');
+            return;
+        }
+        
+        const productsOptions = availableProducts.map(item => 
+            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock} - خرید: ${this.formatCurrency(item.product.purchasePrice)}</option>`
+        ).join('');
+        
+        const itemIndex = Date.now(); // Use timestamp for unique index
+        
+        const newItem = document.createElement('div');
+        newItem.className = 'item-card';
+        newItem.style.marginBottom = 'var(--space-sm)';
+        newItem.innerHTML = `
+            <div class="input-group">
+                <label>محصول جدید</label>
+                <select name="productId_${itemIndex}" data-index="${itemIndex}" required>
+                    <option value="">انتخاب کنید</option>
+                    ${productsOptions}
+                </select>
+            </div>
+            <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
+                <div class="input-group" style="flex: 1;">
+                    <label>تعداد</label>
+                    <input type="number" name="quantity_${itemIndex}" value="1" min="1" required>
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>قیمت فروش</label>
+                    <input type="number" name="sellingPrice_${itemIndex}" step="0.01" required>
+                </div>
+            </div>
+            <div class="input-group" style="margin-top: var(--space-sm);">
+                <label>توضیحات</label>
+                <textarea name="description_${itemIndex}" rows="2"></textarea>
+            </div>
+            <div style="text-align: center; margin-top: var(--space-sm);">
+                <button type="button" class="btn-secondary" onclick="this.closest('.item-card').remove()" style="color: var(--error);">
+                    <i class="fas fa-trash"></i> حذف این محصول
+                </button>
+            </div>
+        `;
+        
+        // Add to form
+        const form = document.getElementById('editSalesInvoiceForm');
+        const productsSection = form.querySelector('h4').parentNode;
+        productsSection.appendChild(newItem);
+    }
+
     // Product Selection Handlers
     onProductSelect(select) {
         const newProductFields = document.getElementById('newProductFields');
@@ -1451,6 +1689,15 @@ class AccountingSystem {
                     <i class="fas fa-edit"></i> ویرایش
                 </button>
                 <button class="btn-secondary" onclick="app.deleteInputInvoice('${invoiceId}')" style="flex: 1; color: var(--error); border-color: var(--error);">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        ` : type === 'sales' ? `
+            <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+                <button class="btn-primary" onclick="app.editSalesInvoice('${invoiceId}')" style="flex: 1;">
+                    <i class="fas fa-edit"></i> ویرایش
+                </button>
+                <button class="btn-secondary" onclick="app.deleteSalesInvoice('${invoiceId}')" style="flex: 1; color: var(--error); border-color: var(--error);">
                     <i class="fas fa-trash"></i> حذف
                 </button>
             </div>

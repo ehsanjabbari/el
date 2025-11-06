@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست کامل دکمه‌های ویرایش و حذف فاکتورها</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #007acc;
+            border-radius: 8px;
+            background: #f0f8ff;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="test-section">
+        <h2>تست کامل دکمه‌های ویرایش و حذف فاکتورها</h2>
+        <div id="testResults"></div>
+        <div class="action-buttons">
+            <button class="btn-primary" onclick="runTests()">اجرای تست‌ها</button>
+            <button class="btn-secondary" onclick="createSampleData()">ایجاد داده نمونه</button>
+            <button class="btn-primary" onclick="app.switchTab('inputInvoices')">فاکتورهای ورودی</button>
+            <button class="btn-primary" onclick="app.switchTab('salesInvoices')">فاکتورهای فروش</button>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close" data-action="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="modalContent">
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function runTests() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<h3>نتایج تست‌های متدها:</h3>';
+            
+            // Tests for input invoice methods
+            const inputTests = [
+                { name: 'editInputInvoice', func: 'app.editInputInvoice' },
+                { name: 'deleteInputInvoice', func: 'app.deleteInputInvoice' },
+                { name: 'handleEditInputInvoiceSubmit', func: 'app.handleEditInputInvoiceSubmit' },
+                { name: 'removeInvoiceItem', func: 'app.removeInvoiceItem' },
+                { name: 'addInvoiceItem', func: 'app.addInvoiceItem' }
+            ];
+            
+            // Tests for sales invoice methods
+            const salesTests = [
+                { name: 'editSalesInvoice', func: 'app.editSalesInvoice' },
+                { name: 'deleteSalesInvoice', func: 'app.deleteSalesInvoice' },
+                { name: 'handleEditSalesInvoiceSubmit', func: 'app.handleEditSalesInvoiceSubmit' },
+                { name: 'removeSalesInvoiceItem', func: 'app.removeSalesInvoiceItem' },
+                { name: 'addSalesInvoiceItem', func: 'app.addSalesInvoiceItem' }
+            ];
+            
+            // Check input invoice methods
+            results.innerHTML += '<h4>متدهای فاکتورهای ورودی:</h4>';
+            inputTests.forEach(test => {
+                if (typeof eval(test.func) === 'function') {
+                    results.innerHTML += '<div class="test-result success">✅ ' + test.name + ' وجود دارد</div>';
+                } else {
+                    results.innerHTML += '<div class="test-result error">❌ ' + test.name + ' یافت نشد</div>';
+                }
+            });
+            
+            // Check sales invoice methods
+            results.innerHTML += '<h4>متدهای فاکتورهای فروش:</h4>';
+            salesTests.forEach(test => {
+                if (typeof eval(test.func) === 'function') {
+                    results.innerHTML += '<div class="test-result success">✅ ' + test.name + ' وجود دارد</div>';
+                } else {
+                    results.innerHTML += '<div class="test-result error">❌ ' + test.name + ' یافت نشد</div>';
+                }
+            });
+            
+            // Check current data
+            const inputInvoices = app.data.inputInvoices;
+            const salesInvoices = app.data.salesInvoices;
+            const products = app.getAllProducts();
+            
+            results.innerHTML += '<h4>وضعیت داده‌ها:</h4>';
+            results.innerHTML += '<div class="test-result info">تعداد محصولات: ' + products.length + '</div>';
+            results.innerHTML += '<div class="test-result info">تعداد فاکتورهای ورودی: ' + inputInvoices.length + '</div>';
+            results.innerHTML += '<div class="test-result info">تعداد فاکتورهای فروش: ' + salesInvoices.length + '</div>';
+            
+            if (products.length === 0) {
+                results.innerHTML += '<div class="test-result error">ابتدا روی "ایجاد داده نمونه" کلیک کنید.</div>';
+            } else {
+                if (inputInvoices.length > 0) {
+                    results.innerHTML += '<div class="test-result success">فاکتور ورودی نمونه: ' + inputInvoices[0].id.slice(-6) + '</div>';
+                }
+                if (salesInvoices.length > 0) {
+                    results.innerHTML += '<div class="test-result success">فاکتور فروش نمونه: ' + salesInvoices[0].id.slice(-6) + '</div>';
+                }
+            }
+        }
+
+        function createSampleData() {
+            results.innerHTML = '<div class="test-result info">در حال ایجاد داده نمونه...</div>';
+            
+            // Add sample products if none exist
+            if (app.getAllProducts().length === 0) {
+                app.addProduct('شیر', 50000);
+                app.addProduct('نان', 10000);
+                app.addProduct('پنیر', 200000);
+                app.addProduct('ماست', 80000);
+                app.addProduct('کره', 300000);
+            }
+            
+            setTimeout(() => {
+                const products = app.getAllProducts();
+                
+                // Clear existing invoices for a clean test
+                app.data.inputInvoices = [];
+                app.data.salesInvoices = [];
+                
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+                
+                // Sample input invoices
+                const sampleInputInvoices = [
+                    {
+                        id: 'input1_' + Date.now(),
+                        date: today,
+                        products: [
+                            {
+                                productId: products[0].id,
+                                productName: products[0].name,
+                                quantity: 20,
+                                unitPrice: 45000,
+                                totalPrice: 900000,
+                                description: 'شیر تازه روزانه'
+                            },
+                            {
+                                productId: products[1].id,
+                                productName: products[1].name,
+                                quantity: 50,
+                                unitPrice: 9500,
+                                totalPrice: 475000,
+                                description: 'نان تازه صبحانه'
+                            }
+                        ],
+                        totalAmount: 1375000,
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'input2_' + (Date.now() + 1),
+                        date: yesterday,
+                        products: [
+                            {
+                                productId: products[2].id,
+                                productName: products[2].name,
+                                quantity: 10,
+                                unitPrice: 190000,
+                                totalPrice: 1900000,
+                                description: 'پنیر سنتی'
+                            }
+                        ],
+                        totalAmount: 1900000,
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                // Sample sales invoices
+                const sampleSalesInvoices = [
+                    {
+                        id: 'sales1_' + (Date.now() + 2),
+                        date: today,
+                        products: [
+                            {
+                                productId: products[0].id,
+                                productName: products[0].name,
+                                quantity: 5,
+                                purchasePrice: 45000,
+                                sellingPrice: 65000,
+                                totalPrice: 325000,
+                                profit: 100000,
+                                description: 'فروش شیر'
+                            }
+                        ],
+                        totalAmount: 325000,
+                        totalProfit: 100000,
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'sales2_' + (Date.now() + 3),
+                        date: yesterday,
+                        products: [
+                            {
+                                productId: products[1].id,
+                                productName: products[1].name,
+                                quantity: 10,
+                                purchasePrice: 9500,
+                                sellingPrice: 15000,
+                                totalPrice: 150000,
+                                profit: 55000,
+                                description: 'فروش نان'
+                            },
+                            {
+                                productId: products[3].id,
+                                productName: products[3].name,
+                                quantity: 3,
+                                purchasePrice: 80000,
+                                sellingPrice: 120000,
+                                totalPrice: 360000,
+                                profit: 120000,
+                                description: 'فروش ماست'
+                            }
+                        ],
+                        totalAmount: 510000,
+                        totalProfit: 175000,
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                // Add invoices to data
+                app.data.inputInvoices = sampleInputInvoices;
+                app.data.salesInvoices = sampleSalesInvoices;
+                
+                app.saveData();
+                app.showToast('داده نمونه با موفقیت ایجاد شد', 'success');
+                
+                setTimeout(() => {
+                    app.renderInputInvoices();
+                    app.renderSalesInvoices();
+                }, 500);
+            }, 100);
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>
