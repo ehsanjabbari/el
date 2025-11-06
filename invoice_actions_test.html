@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست دکمه‌های ویرایش و حذف فاکتور</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #007acc;
+            border-radius: 8px;
+            background: #f0f8ff;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="test-section">
+        <h2>تست دکمه‌های ویرایش و حذف فاکتورهای ورودی</h2>
+        <div id="testResults"></div>
+        <button class="btn-primary" onclick="runTests()">اجرای تست‌ها</button>
+        <button class="btn-secondary" onclick="createSampleData()">ایجاد داده نمونه</button>
+        <button class="btn-primary" onclick="app.switchTab('inputInvoices')">رفتن به فاکتورهای ورودی</button>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close" data-action="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="modalContent">
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function runTests() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<h3>نتایج تست‌ها:</h3>';
+            
+            // Test 1: Check if editInputInvoice method exists
+            if (typeof app.editInputInvoice === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد editInputInvoice وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد editInputInvoice یافت نشد</div>';
+            }
+            
+            // Test 2: Check if deleteInputInvoice method exists
+            if (typeof app.deleteInputInvoice === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد deleteInputInvoice وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد deleteInputInvoice یافت نشد</div>';
+            }
+            
+            // Test 3: Check if handleEditInputInvoiceSubmit method exists
+            if (typeof app.handleEditInputInvoiceSubmit === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد handleEditInputInvoiceSubmit وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد handleEditInputInvoiceSubmit یافت نشد</div>';
+            }
+            
+            // Test 4: Check if removeInvoiceItem method exists
+            if (typeof app.removeInvoiceItem === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد removeInvoiceItem وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد removeInvoiceItem یافت نشد</div>';
+            }
+            
+            // Test 5: Check if addInvoiceItem method exists
+            if (typeof app.addInvoiceItem === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد addInvoiceItem وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد addInvoiceItem یافت نشد</div>';
+            }
+            
+            const inputInvoices = app.data.inputInvoices;
+            results.innerHTML += '<div class="test-result info">تعداد فاکتورهای ورودی فعلی: ' + inputInvoices.length + '</div>';
+            
+            if (inputInvoices.length > 0) {
+                results.innerHTML += '<div class="test-result success">✅ برای تست عملکرد، روی "رفتن به فاکتورهای ورودی" کلیک کنید</div>';
+                results.innerHTML += '<div class="test-result info">نمونه فاکتور موجود: ' + inputInvoices[0].id.slice(-6) + '</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">فاکتوری موجود نیست. روی "ایجاد داده نمونه" کلیک کنید.</div>';
+            }
+        }
+
+        function createSampleData() {
+            // Add sample products if none exist
+            if (app.getAllProducts().length === 0) {
+                app.addProduct('شیر', 50000);
+                app.addProduct('نان', 10000);
+                app.addProduct('پنیر', 200000);
+            }
+            
+            // Add sample input invoices
+            const products = app.getAllProducts();
+            if (products.length >= 3) {
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                
+                // Sample invoice 1
+                const invoice1 = {
+                    productId: products[0].id,
+                    productName: products[0].name,
+                    quantity: 20,
+                    unitPrice: 45000,
+                    totalPrice: 900000,
+                    description: 'شیر تازه'
+                };
+                
+                const total1 = app.data.inputInvoices.push({
+                    id: 'test1_' + Date.now(),
+                    date: today,
+                    products: [invoice1],
+                    totalAmount: 900000,
+                    createdAt: new Date().toISOString()
+                });
+                
+                // Sample invoice 2
+                const invoice2 = {
+                    productId: products[1].id,
+                    productName: products[1].name,
+                    quantity: 50,
+                    unitPrice: 9500,
+                    totalPrice: 475000,
+                    description: 'نان تازه'
+                };
+                
+                app.data.inputInvoices.push({
+                    id: 'test2_' + (Date.now() + 1),
+                    date: yesterday,
+                    products: [invoice2],
+                    totalAmount: 475000,
+                    createdAt: new Date().toISOString()
+                });
+                
+                app.saveData();
+                app.showToast('داده نمونه با موفقیت ایجاد شد', 'success');
+                
+                setTimeout(() => {
+                    app.renderInputInvoices();
+                }, 500);
+            }
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>

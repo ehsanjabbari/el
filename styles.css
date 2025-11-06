@@ -184,6 +184,38 @@ body.light-theme {
     background-color: var(--border-subtle);
 }
 
+/* Icon Buttons */
+.btn-icon {
+    background-color: var(--surface-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    width: 32px;
+    height: 32px;
+}
+
+.btn-icon:hover {
+    background-color: var(--border-subtle);
+    transform: scale(1.05);
+}
+
+.btn-icon.btn-danger {
+    color: var(--error);
+    border-color: var(--error);
+}
+
+.btn-icon.btn-danger:hover {
+    background-color: var(--error);
+    color: white;
+}
+
 /* Content Lists */
 .content-list {
     display: flex;
@@ -214,6 +246,20 @@ body.light-theme .item-card:hover {
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: var(--space-xs);
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.item-title {
+    cursor: pointer;
+}
+
+.item-title:hover {
+    color: var(--primary);
 }
 
 .item-title {
