@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم حسابداری و انبارداری</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dark-theme">
+    <!-- Header -->
+    <header class="app-header">
+        <h1 class="header-title">سیستم حسابداری</h1>
+        <button class="theme-toggle" id="themeToggle">
+            <i class="fas fa-sun"></i>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Input Invoices Tab -->
+        <div id="inputInvoices" class="tab-content active">
+            <div class="tab-header">
+                <h2>فاکتورهای ورودی</h2>
+                <button class="btn-primary" id="addInputInvoice">
+                    <i class="fas fa-plus"></i>
+                    فاکتور جدید
+                </button>
+            </div>
+            <div class="content-list" id="inputInvoicesList">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Sales Invoices Tab -->
+        <div id="salesInvoices" class="tab-content">
+            <div class="tab-header">
+                <h2>فاکتورهای فروش</h2>
+                <button class="btn-primary" id="addSalesInvoice">
+                    <i class="fas fa-plus"></i>
+                    فروش جدید
+                </button>
+            </div>
+            <div class="content-list" id="salesInvoicesList">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory" class="tab-content">
+            <div class="tab-header">
+                <h2>موجودی انبار</h2>
+                <button class="btn-primary" id="manageInventory">
+                    <i class="fas fa-boxes"></i>
+                    مدیریت
+                </button>
+            </div>
+            <div class="content-list" id="inventoryList">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <div class="tab-header">
+                <h2>گزارش فروش</h2>
+            </div>
+            <div class="reports-container">
+                <div class="date-range-selector">
+                    <div class="input-group">
+                        <label>از تاریخ</label>
+                        <input type="text" id="fromDate" placeholder="مثال: ۱۴۰۳/۰۸/۱۵">
+                    </div>
+                    <div class="input-group">
+                        <label>تا تاریخ</label>
+                        <input type="text" id="toDate" placeholder="مثال: ۱۴۰۳/۰۹/۱۵">
+                    </div>
+                    <button class="btn-primary" id="generateReport">تهیه گزارش</button>
+                </div>
+                <div class="report-results" id="reportResults">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Tab -->
+        <div id="backup" class="tab-content">
+            <div class="tab-header">
+                <h2>بک‌آپ و همگام‌سازی</h2>
+            </div>
+            <div class="backup-container">
+                <div class="backup-section">
+                    <h3>بک‌آپ محلی</h3>
+                    <div class="backup-actions">
+                        <button class="btn-primary" id="exportData">
+                            <i class="fas fa-download"></i>
+                            خروجی گرفتن
+                        </button>
+                        <button class="btn-secondary" id="importData">
+                            <i class="fas fa-upload"></i>
+                            ورود اطلاعات
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                    </div>
+                </div>
+                <div class="backup-section">
+                    <h3>همگام‌سازی GitHub</h3>
+                    <div class="github-config">
+                        <div class="input-group">
+                            <label>GitHub Token</label>
+                            <input type="password" id="githubToken" placeholder="توکن شخصی GitHub">
+                        </div>
+                        <div class="input-group">
+                            <label>نام Repository</label>
+                            <input type="text" id="repoName" placeholder="نام مخزن">
+                        </div>
+                        <div class="input-group">
+                            <label>نام فایل</label>
+                            <input type="text" id="fileName" placeholder="accounting-data.json" value="accounting-data.json">
+                        </div>
+                        <div class="backup-actions">
+                            <button class="btn-primary" id="syncToGitHub">
+                                <i class="fab fa-github"></i>
+                                ارسال به GitHub
+                            </button>
+                            <button class="btn-secondary" id="syncFromGitHub">
+                                <i class="fas fa-sync"></i>
+                                دریافت از GitHub
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-tab="inputInvoices">
+            <i class="fas fa-file-import"></i>
+            <span>ورودی</span>
+        </button>
+        <button class="nav-item" data-tab="salesInvoices">
+            <i class="fas fa-file-export"></i>
+            <span>فروش</span>
+        </button>
+        <button class="nav-item" data-tab="inventory">
+            <i class="fas fa-boxes"></i>
+            <span>انبار</span>
+        </button>
+        <button class="nav-item" data-tab="reports">
+            <i class="fas fa-chart-bar"></i>
+            <span>گزارش</span>
+        </button>
+        <button class="nav-item" data-tab="backup">
+            <i class="fas fa-cloud"></i>
+            <span>بک‌آپ</span>
+        </button>
+    </nav>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fab">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Modal for Adding/Editing -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">عنوان</h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="modalContent">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
