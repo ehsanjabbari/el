@@ -485,9 +485,6 @@ class AccountingSystem {
         title.textContent = 'فاکتور ورودی جدید';
         
         const products = this.getAllProducts();
-        const productsOptions = products.length > 0 
-            ? products.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
-            : '<option value="">هنوز محصولی ثبت نشده است</option>';
         
         content.innerHTML = `
             <form id="inputInvoiceForm">
@@ -495,27 +492,15 @@ class AccountingSystem {
                     <label>تاریخ</label>
                     <input type="date" name="date" required>
                 </div>
-                <div class="input-group">
-                    <label>محصول</label>
-                    <select name="productId" onchange="app.onProductSelect(this)" required>
-                        <option value="">انتخاب کنید</option>
-                        ${productsOptions}
-                    </select>
-                </div>
-                <div id="newProductFields" style="display: none;">
-                    <div class="input-group">
-                        <label>نام محصول جدید</label>
-                        <input type="text" name="newProductName" placeholder="نام محصول">
+                <div style="margin: var(--space-lg) 0;">
+                    <h4>محصولات فاکتور</h4>
+                    <div id="inputInvoiceProducts">
+                        <!-- First product item will be added by addInputInvoiceItem() -->
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>تعداد</label>
-                    <input type="number" name="quantity" min="1" value="1" required>
-                </div>
-                <div class="input-group">
-                    <label>توضیحات (اختیاری)</label>
-                    <textarea name="description" rows="3" placeholder="توضیحات اضافی"></textarea>
-                </div>
+                <button type="button" class="btn-secondary" onclick="app.addInputInvoiceItem()" style="margin-bottom: var(--space-md);">
+                    <i class="fas fa-plus"></i> افزودن محصول
+                </button>
                 <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
                     <button type="submit" class="btn-primary" style="flex: 1;">ثبت فاکتور</button>
                     <button type="button" class="btn-secondary" data-action="close-modal" style="flex: 1;">انصراف</button>
@@ -528,6 +513,9 @@ class AccountingSystem {
         // Set today's date
         const dateInput = content.querySelector('input[name="date"]');
         dateInput.valueAsDate = new Date();
+        
+        // Add the first product item by default
+        this.addInputInvoiceItem();
         
         // Set up form submission
         content.querySelector('#inputInvoiceForm').addEventListener('submit', (e) => {
@@ -558,35 +546,21 @@ class AccountingSystem {
             return;
         }
         
-        const productsOptions = availableProducts.map(item => 
-            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock}</option>`
-        ).join('');
-        
         content.innerHTML = `
             <form id="salesInvoiceForm">
                 <div class="input-group">
                     <label>تاریخ</label>
                     <input type="date" name="date" required>
                 </div>
-                <div class="input-group">
-                    <label>محصول</label>
-                    <select name="productId" onchange="app.onSalesProductSelect(this)" required>
-                        <option value="">انتخاب کنید</option>
-                        ${productsOptions}
-                    </select>
+                <div style="margin: var(--space-lg) 0;">
+                    <h4>محصولات فاکتور</h4>
+                    <div id="salesInvoiceProducts">
+                        <!-- First product item will be added by addSalesInvoiceItem() -->
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label>تعداد قابل فروش</label>
-                    <input type="number" name="maxQuantity" readonly>
-                </div>
-                <div class="input-group">
-                    <label>تعداد</label>
-                    <input type="number" name="quantity" min="1" required>
-                </div>
-                <div class="input-group">
-                    <label>توضیحات (اختیاری)</label>
-                    <textarea name="description" rows="3" placeholder="توضیحات اضافی"></textarea>
-                </div>
+                <button type="button" class="btn-secondary" onclick="app.addSalesInvoiceItem()" style="margin-bottom: var(--space-md);">
+                    <i class="fas fa-plus"></i> افزودن محصول
+                </button>
                 <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
                     <button type="submit" class="btn-primary" style="flex: 1;">ثبت فاکتور</button>
                     <button type="button" class="btn-secondary" data-action="close-modal" style="flex: 1;">انصراف</button>
@@ -599,6 +573,9 @@ class AccountingSystem {
         // Set today's date
         const dateInput = content.querySelector('input[name="date"]');
         dateInput.valueAsDate = new Date();
+        
+        // Add the first product item by default
+        this.addSalesInvoiceItem();
         
         // Set up form submission
         content.querySelector('#salesInvoiceForm').addEventListener('submit', (e) => {
@@ -686,36 +663,67 @@ class AccountingSystem {
         e.preventDefault();
         const formData = new FormData(e.target);
         const date = formData.get('date');
-        const productId = formData.get('productId');
-        const quantity = parseInt(formData.get('quantity'));
-        const description = formData.get('description');
         
-        let product;
+        // Collect all products
+        const products = [];
+        const productItems = document.querySelectorAll('#inputInvoiceProducts .item-card');
         
-        if (productId) {
-            // Existing product
-            product = this.getProductById(productId);
-        } else {
-            // New product
-            const newProductName = formData.get('newProductName');
+        for (let i = 0; i < productItems.length; i++) {
+            const item = productItems[i];
+            const productIdSelect = item.querySelector('select[name^="productId_"]');
+            const quantityInput = item.querySelector('input[name^="quantity_"]');
+            const descriptionTextarea = item.querySelector('textarea[name^="description_"]');
             
-            if (!newProductName) {
-                this.showToast('لطفاً نام محصول جدید را وارد کنید', 'error');
+            const productId = productIdSelect.value;
+            const quantity = parseInt(quantityInput.value);
+            const description = descriptionTextarea.value;
+            
+            if (!productId) {
+                this.showToast('لطفاً محصول را انتخاب کنید', 'error');
                 return;
             }
             
-            product = this.addProduct(newProductName);
+            if (quantity <= 0) {
+                this.showToast('لطفاً تعداد معتبر وارد کنید', 'error');
+                return;
+            }
+            
+            let product;
+            
+            if (productId === 'new') {
+                // New product
+                const newProductNameInput = item.querySelector('input[name^="newProductName_"]');
+                const newProductName = newProductNameInput.value.trim();
+                
+                if (!newProductName) {
+                    this.showToast('لطفاً نام محصول جدید را وارد کنید', 'error');
+                    return;
+                }
+                
+                product = this.addProduct(newProductName);
+            } else {
+                // Existing product
+                product = this.getProductById(productId);
+            }
+            
+            products.push({
+                productId: product.id,
+                productName: product.name,
+                quantity: quantity,
+                description: description
+            });
         }
         
-        const invoice = this.addInputInvoice([{
-            productId: product.id,
-            productName: product.name,
-            quantity: quantity,
-            description: description
-        }], date);
+        if (products.length === 0) {
+            this.showToast('لطفاً حداقل یک محصول اضافه کنید', 'error');
+            return;
+        }
+        
+        this.addInputInvoice(products, date);
         
         this.hideModal();
         this.renderInputInvoices();
+        this.renderInventory();
         this.showToast('فاکتور ورودی با موفقیت ثبت شد', 'success');
     }
 
@@ -723,30 +731,59 @@ class AccountingSystem {
         e.preventDefault();
         const formData = new FormData(e.target);
         const date = formData.get('date');
-        const productId = formData.get('productId');
-        const quantity = parseInt(formData.get('quantity'));
-        const description = formData.get('description');
         
-        const inventory = this.getInventory();
-        const availableProduct = inventory[productId];
+        // Collect all products
+        const products = [];
+        const productItems = document.querySelectorAll('#salesInvoiceProducts .item-card');
         
-        if (!availableProduct || availableProduct.currentStock < quantity) {
-            this.showToast('تعداد درخواستی موجود نیست', 'error');
+        for (let i = 0; i < productItems.length; i++) {
+            const item = productItems[i];
+            const productIdSelect = item.querySelector('select[name^="productId_"]');
+            const quantityInput = item.querySelector('input[name^="quantity_"]');
+            const descriptionTextarea = item.querySelector('textarea[name^="description_"]');
+            
+            const productId = productIdSelect.value;
+            const quantity = parseInt(quantityInput.value);
+            const description = descriptionTextarea.value;
+            
+            if (!productId) {
+                this.showToast('لطفاً محصول را انتخاب کنید', 'error');
+                return;
+            }
+            
+            if (quantity <= 0) {
+                this.showToast('لطفاً تعداد معتبر وارد کنید', 'error');
+                return;
+            }
+            
+            // Check inventory availability
+            const inventory = this.getInventory();
+            const availableProduct = inventory[productId];
+            
+            if (!availableProduct || availableProduct.currentStock < quantity) {
+                const productName = availableProduct?.product?.name || 'نامشخص';
+                this.showToast(`موجودی محصول "${productName}" کافی نیست`, 'error');
+                return;
+            }
+            
+            products.push({
+                productId: availableProduct.product.id,
+                productName: availableProduct.product.name,
+                quantity: quantity,
+                description: description
+            });
+        }
+        
+        if (products.length === 0) {
+            this.showToast('لطفاً حداقل یک محصول اضافه کنید', 'error');
             return;
         }
         
-        const product = availableProduct.product;
-        
-        const invoice = this.addSalesInvoice([{
-            productId: product.id,
-            productName: product.name,
-            quantity: quantity,
-            description: description
-        }], date);
+        this.addSalesInvoice(products, date);
         
         this.hideModal();
         this.renderSalesInvoices();
-        this.renderInventory(); // Update inventory display
+        this.renderInventory();
         this.showToast('فاکتور فروش با موفقیت ثبت شد', 'success');
     }
 
@@ -950,6 +987,69 @@ class AccountingSystem {
             }, 300);
         } else {
             this.showToast('خطا در به‌روزرسانی فاکتور', 'error');
+        }
+    }
+
+    removeInputInvoiceItem(button, index) {
+        button.closest('.item-card').remove();
+    }
+
+    addInputInvoiceItem() {
+        const products = this.getAllProducts();
+        
+        const productsOptions = [
+            '<option value="">انتخاب کنید</option>',
+            ...products.map(p => `<option value="${p.id}">${p.name}</option>`),
+            '<option value="new">محصول جدید</option>'
+        ].join('');
+        
+        const itemIndex = Date.now(); // Use timestamp for unique index
+        
+        const newItem = document.createElement('div');
+        newItem.className = 'item-card';
+        newItem.style.marginBottom = 'var(--space-sm)';
+        newItem.innerHTML = `
+            <div class="input-group">
+                <label>محصول</label>
+                <select name="productId_${itemIndex}" data-index="${itemIndex}" onchange="app.onInputProductSelect(this)" required>
+                    <option value="">انتخاب کنید</option>
+                    ${productsOptions}
+                </select>
+            </div>
+            <div id="newProductFields_${itemIndex}" style="display: none;">
+                <div class="input-group" style="margin-top: var(--space-sm);">
+                    <label>نام محصول جدید</label>
+                    <input type="text" name="newProductName_${itemIndex}" placeholder="نام محصول">
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
+                <div class="input-group" style="flex: 1;">
+                    <label>تعداد</label>
+                    <input type="number" name="quantity_${itemIndex}" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="input-group" style="margin-top: var(--space-sm);">
+                <label>توضیحات</label>
+                <textarea name="description_${itemIndex}" rows="2" placeholder="توضیحات اضافی"></textarea>
+            </div>
+            <div style="text-align: center; margin-top: var(--space-sm);">
+                <button type="button" class="btn-secondary" onclick="app.removeInputInvoiceItem(this, ${itemIndex})" style="color: var(--error);">
+                    <i class="fas fa-trash"></i> حذف این محصول
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('inputInvoiceProducts').appendChild(newItem);
+    }
+
+    onInputProductSelect(select) {
+        const index = select.dataset.index;
+        const newProductFields = document.getElementById(`newProductFields_${index}`);
+        
+        if (select.value === 'new') {
+            newProductFields.style.display = 'block';
+        } else {
+            newProductFields.style.display = 'none';
         }
     }
 
@@ -1207,15 +1307,9 @@ class AccountingSystem {
                     ${productsOptions}
                 </select>
             </div>
-            <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
-                <div class="input-group" style="flex: 1;">
-                    <label>تعداد</label>
-                    <input type="number" name="quantity_${itemIndex}" value="1" min="1" required>
-                </div>
-                <div class="input-group" style="flex: 1;">
-                    <label>قیمت فروش</label>
-                    <input type="number" name="sellingPrice_${itemIndex}" step="0.01" required>
-                </div>
+            <div class="input-group" style="margin-top: var(--space-sm);">
+                <label>تعداد</label>
+                <input type="number" name="quantity_${itemIndex}" value="1" min="1" required>
             </div>
             <div class="input-group" style="margin-top: var(--space-sm);">
                 <label>توضیحات</label>
@@ -1235,39 +1329,6 @@ class AccountingSystem {
     }
 
     // Product Selection Handlers
-    onProductSelect(select) {
-        const newProductFields = document.getElementById('newProductFields');
-        const unitPriceField = document.querySelector('input[name="unitPrice"]');
-        const quantityField = document.querySelector('input[name="quantity"]');
-        
-        if (select.value === 'new') {
-            newProductFields.style.display = 'block';
-            unitPriceField.value = '';
-        } else {
-            newProductFields.style.display = 'none';
-            if (select.value) {
-                const product = this.getProductById(select.value);
-                unitPriceField.value = product.purchasePrice;
-            }
-        }
-    }
-
-    onSalesProductSelect(select) {
-        const quantityField = document.querySelector('input[name="quantity"]');
-        const maxQuantityField = document.querySelector('input[name="maxQuantity"]');
-        const sellingPriceField = document.querySelector('input[name="sellingPrice"]');
-        
-        if (select.value) {
-            const inventory = this.getInventory();
-            const availableProduct = inventory[select.value];
-            if (availableProduct) {
-                maxQuantityField.value = availableProduct.currentStock;
-                quantityField.max = availableProduct.currentStock;
-                quantityField.value = 1;
-                sellingPriceField.value = availableProduct.product.purchasePrice;
-            }
-        }
-    }
 
 
 
