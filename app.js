@@ -80,10 +80,7 @@ class AccountingSystem {
             this.showManageInventoryModal();
         });
 
-        // Reports
-        document.getElementById('generateReport').addEventListener('click', () => {
-            this.generateReport();
-        });
+
 
         // Backup functions
         document.getElementById('exportData').addEventListener('click', () => {
@@ -166,9 +163,7 @@ class AccountingSystem {
             case 'inventory':
                 this.renderInventory();
                 break;
-            case 'reports':
-                this.renderReports();
-                break;
+
             case 'backup':
                 this.renderBackup();
                 break;
@@ -250,11 +245,10 @@ class AccountingSystem {
     }
 
     // Product Management
-    addProduct(name, purchasePrice) {
+    addProduct(name) {
         const product = {
             id: Date.now().toString(),
             name: name.trim(),
-            purchasePrice: parseFloat(purchasePrice),
             createdAt: new Date().toISOString()
         };
         
@@ -272,12 +266,11 @@ class AccountingSystem {
     }
 
     // Invoice Management
-    addInputInvoice(products, date, totalAmount) {
+    addInputInvoice(products, date) {
         const invoice = {
             id: Date.now().toString(),
             date: date,
             products: products,
-            totalAmount: totalAmount,
             createdAt: new Date().toISOString()
         };
         
@@ -286,13 +279,11 @@ class AccountingSystem {
         return invoice;
     }
 
-    addSalesInvoice(products, date, totalAmount, totalProfit) {
+    addSalesInvoice(products, date) {
         const invoice = {
             id: Date.now().toString(),
             date: date,
             products: products,
-            totalAmount: totalAmount,
-            totalProfit: totalProfit,
             createdAt: new Date().toISOString()
         };
         
@@ -368,7 +359,6 @@ class AccountingSystem {
                                 <button class="btn-icon btn-danger" onclick="app.deleteInputInvoice('${invoice.id}')" title="حذف">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                                <span class="item-amount">${this.formatCurrency(invoice.totalAmount)}</span>
                             </div>
                         </div>
                         <div class="item-subtitle">
@@ -394,8 +384,6 @@ class AccountingSystem {
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .map(invoice => {
                 const date = new Date(invoice.date);
-                const profitStatus = invoice.totalProfit >= 0 ? 'profit' : 'loss';
-                const profitText = invoice.totalProfit >= 0 ? 'سود' : 'زیان';
                 return `
                     <div class="item-card">
                         <div class="item-card-header">
@@ -407,12 +395,11 @@ class AccountingSystem {
                                 <button class="btn-icon btn-danger" onclick="app.deleteSalesInvoice('${invoice.id}')" title="حذف">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                                <span class="item-amount">${this.formatCurrency(invoice.totalAmount)}</span>
                             </div>
                         </div>
                         <div class="item-subtitle">
                             <span onclick="app.showInvoiceDetails('sales', '${invoice.id}')">${this.getPersianDateLong(date)}</span>
-                            <span class="item-status ${profitStatus}">${profitText}: ${this.formatCurrency(invoice.totalProfit)}</span>
+                            <span class="item-status">${invoice.products.length} محصول</span>
                         </div>
                     </div>
                 `;
@@ -441,7 +428,6 @@ class AccountingSystem {
                     <div class="item-card" onclick="app.showProductDetails('${item.product.id}')">
                         <div class="item-card-header">
                             <h3 class="item-title">${item.product.name}</h3>
-                            <span class="item-amount">${this.formatCurrency(item.product.purchasePrice)}</span>
                         </div>
                         <div class="item-subtitle">
                             <span>ورود: ${item.totalInput} | خروج: ${item.totalOutput}</span>
@@ -454,11 +440,7 @@ class AccountingSystem {
         container.innerHTML = inventoryItems;
     }
 
-    renderReports() {
-        // This will be updated when generateReport is called
-        document.getElementById('reportResults').innerHTML = 
-            '<div class="empty-state"><p>برای مشاهده گزارش، بازه زمانی مورد نظر را انتخاب کنید</p></div>';
-    }
+
 
     renderBackup() {
         // Load saved settings
@@ -504,7 +486,7 @@ class AccountingSystem {
         
         const products = this.getAllProducts();
         const productsOptions = products.length > 0 
-            ? products.map(p => `<option value="${p.id}">${p.name} - ${this.formatCurrency(p.purchasePrice)}</option>`).join('')
+            ? products.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
             : '<option value="">هنوز محصولی ثبت نشده است</option>';
         
         content.innerHTML = `
@@ -525,18 +507,10 @@ class AccountingSystem {
                         <label>نام محصول جدید</label>
                         <input type="text" name="newProductName" placeholder="نام محصول">
                     </div>
-                    <div class="input-group">
-                        <label>قیمت خرید</label>
-                        <input type="number" name="newProductPrice" placeholder="قیمت خرید" step="0.01">
-                    </div>
                 </div>
                 <div class="input-group">
                     <label>تعداد</label>
                     <input type="number" name="quantity" min="1" value="1" required>
-                </div>
-                <div class="input-group">
-                    <label>قیمت واحد</label>
-                    <input type="number" name="unitPrice" step="0.01" required>
                 </div>
                 <div class="input-group">
                     <label>توضیحات (اختیاری)</label>
@@ -585,7 +559,7 @@ class AccountingSystem {
         }
         
         const productsOptions = availableProducts.map(item => 
-            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock} - خرید: ${this.formatCurrency(item.product.purchasePrice)}</option>`
+            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock}</option>`
         ).join('');
         
         content.innerHTML = `
@@ -608,10 +582,6 @@ class AccountingSystem {
                 <div class="input-group">
                     <label>تعداد</label>
                     <input type="number" name="quantity" min="1" required>
-                </div>
-                <div class="input-group">
-                    <label>قیمت فروش</label>
-                    <input type="number" name="sellingPrice" step="0.01" required>
                 </div>
                 <div class="input-group">
                     <label>توضیحات (اختیاری)</label>
@@ -652,10 +622,6 @@ class AccountingSystem {
                     <div class="input-group">
                         <label>نام محصول</label>
                         <input type="text" name="name" required>
-                    </div>
-                    <div class="input-group">
-                        <label>قیمت خرید</label>
-                        <input type="number" name="price" step="0.01" required>
                     </div>
                     <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
                         <button type="submit" class="btn-primary" style="flex: 1;">افزودن</button>
@@ -722,7 +688,6 @@ class AccountingSystem {
         const date = formData.get('date');
         const productId = formData.get('productId');
         const quantity = parseInt(formData.get('quantity'));
-        const unitPrice = parseFloat(formData.get('unitPrice'));
         const description = formData.get('description');
         
         let product;
@@ -733,26 +698,21 @@ class AccountingSystem {
         } else {
             // New product
             const newProductName = formData.get('newProductName');
-            const newProductPrice = parseFloat(formData.get('newProductPrice'));
             
-            if (!newProductName || !newProductPrice) {
-                this.showToast('لطفاً تمام فیلدهای محصول جدید را پر کنید', 'error');
+            if (!newProductName) {
+                this.showToast('لطفاً نام محصول جدید را وارد کنید', 'error');
                 return;
             }
             
-            product = this.addProduct(newProductName, newProductPrice);
+            product = this.addProduct(newProductName);
         }
-        
-        const totalAmount = quantity * unitPrice;
         
         const invoice = this.addInputInvoice([{
             productId: product.id,
             productName: product.name,
             quantity: quantity,
-            unitPrice: unitPrice,
-            totalPrice: totalAmount,
             description: description
-        }], date, totalAmount);
+        }], date);
         
         this.hideModal();
         this.renderInputInvoices();
@@ -765,7 +725,6 @@ class AccountingSystem {
         const date = formData.get('date');
         const productId = formData.get('productId');
         const quantity = parseInt(formData.get('quantity'));
-        const sellingPrice = parseFloat(formData.get('sellingPrice'));
         const description = formData.get('description');
         
         const inventory = this.getInventory();
@@ -777,19 +736,13 @@ class AccountingSystem {
         }
         
         const product = availableProduct.product;
-        const totalAmount = quantity * sellingPrice;
-        const totalProfit = quantity * (sellingPrice - product.purchasePrice);
         
         const invoice = this.addSalesInvoice([{
             productId: product.id,
             productName: product.name,
             quantity: quantity,
-            purchasePrice: product.purchasePrice,
-            sellingPrice: sellingPrice,
-            totalPrice: totalAmount,
-            profit: totalProfit,
             description: description
-        }], date, totalAmount, totalProfit);
+        }], date);
         
         this.hideModal();
         this.renderSalesInvoices();
@@ -803,7 +756,7 @@ class AccountingSystem {
         const name = formData.get('name');
         const price = parseFloat(formData.get('price'));
         
-        this.addProduct(name, price);
+        this.addProduct(name);
         e.target.reset();
         this.showToast('محصول با موفقیت اضافه شد', 'success');
         
@@ -833,10 +786,6 @@ class AccountingSystem {
                     <label>نام محصول</label>
                     <input type="text" name="name" value="${product.name}" required>
                 </div>
-                <div class="input-group">
-                    <label>قیمت خرید</label>
-                    <input type="number" name="price" value="${product.purchasePrice}" step="0.01" required>
-                </div>
                 <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
                     <button type="submit" class="btn-primary" style="flex: 1;">ذخیره تغییرات</button>
                     <button type="button" class="btn-secondary" data-action="close-modal" style="flex: 1;">انصراف</button>
@@ -856,10 +805,9 @@ class AccountingSystem {
         e.preventDefault();
         const formData = new FormData(e.target);
         const updatedName = formData.get('name');
-        const updatedPrice = parseFloat(formData.get('price'));
         
-        if (!updatedName || !updatedPrice) {
-            this.showToast('لطفاً تمام فیلدها را پر کنید', 'error');
+        if (!updatedName) {
+            this.showToast('لطفاً نام محصول را وارد کنید', 'error');
             return;
         }
         
@@ -867,7 +815,6 @@ class AccountingSystem {
         const productIndex = this.data.products.findIndex(p => p.id === productId);
         if (productIndex !== -1) {
             this.data.products[productIndex].name = updatedName;
-            this.data.products[productIndex].purchasePrice = updatedPrice;
             this.data.products[productIndex].updatedAt = new Date().toISOString();
             
             this.saveData();
@@ -898,10 +845,6 @@ class AccountingSystem {
         title.textContent = 'ویرایش فاکتور ورودی';
         
         const products = this.getAllProducts();
-        const productsOptions = products.map(p => 
-            `<option value="${p.id}">${p.name} - ${this.formatCurrency(p.purchasePrice)}</option>`
-        ).join('');
-        
         const productsHTML = invoice.products.map((item, index) => `
             <div class="item-card" style="margin-bottom: var(--space-sm);">
                 <div class="input-group">
@@ -910,20 +853,14 @@ class AccountingSystem {
                         <option value="">انتخاب کنید</option>
                         ${products.map(p => 
                             `<option value="${p.id}" ${p.id === item.productId ? 'selected' : ''}>
-                                ${p.name} - ${this.formatCurrency(p.purchasePrice)}
+                                ${p.name}
                             </option>`
                         ).join('')}
                     </select>
                 </div>
-                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
-                    <div class="input-group" style="flex: 1;">
-                        <label>تعداد</label>
-                        <input type="number" name="quantity_${index}" value="${item.quantity}" min="1" required>
-                    </div>
-                    <div class="input-group" style="flex: 1;">
-                        <label>قیمت واحد</label>
-                        <input type="number" name="unitPrice_${index}" value="${item.unitPrice}" step="0.01" required>
-                    </div>
+                <div class="input-group" style="margin-top: var(--space-sm);">
+                    <label>تعداد</label>
+                    <input type="number" name="quantity_${index}" value="${item.quantity}" min="1" required>
                 </div>
                 <div class="input-group" style="margin-top: var(--space-sm);">
                     <label>توضیحات</label>
@@ -977,17 +914,14 @@ class AccountingSystem {
         invoice.products.forEach((item, index) => {
             const productId = formData.get(`productId_${index}`);
             const quantity = parseInt(formData.get(`quantity_${index}`));
-            const unitPrice = parseFloat(formData.get(`unitPrice_${index}`));
             const description = formData.get(`description_${index}`);
             
-            if (productId && quantity > 0 && unitPrice > 0) {
+            if (productId && quantity > 0) {
                 const product = this.getProductById(productId);
                 products.push({
                     productId: productId,
                     productName: product.name,
                     quantity: quantity,
-                    unitPrice: unitPrice,
-                    totalPrice: quantity * unitPrice,
                     description: description
                 });
             }
@@ -998,14 +932,11 @@ class AccountingSystem {
             return;
         }
         
-        const totalAmount = products.reduce((sum, item) => sum + item.totalPrice, 0);
-        
         // Update invoice
         const invoiceIndex = this.data.inputInvoices.findIndex(i => i.id === invoiceId);
         if (invoiceIndex !== -1) {
             this.data.inputInvoices[invoiceIndex].date = date;
             this.data.inputInvoices[invoiceIndex].products = products;
-            this.data.inputInvoices[invoiceIndex].totalAmount = totalAmount;
             this.data.inputInvoices[invoiceIndex].updatedAt = new Date().toISOString();
             
             this.saveData();
@@ -1110,9 +1041,6 @@ class AccountingSystem {
         
         const inventory = this.getInventory();
         const availableProducts = Object.values(inventory).filter(item => item.currentStock > 0);
-        const productsOptions = availableProducts.map(item => 
-            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock} - خرید: ${this.formatCurrency(item.product.purchasePrice)}</option>`
-        ).join('');
         
         const productsHTML = invoice.products.map((item, index) => `
             <div class="item-card" style="margin-bottom: var(--space-sm);">
@@ -1122,20 +1050,14 @@ class AccountingSystem {
                         <option value="">انتخاب کنید</option>
                         ${availableProducts.map(p => 
                             `<option value="${p.product.id}" ${p.product.id === item.productId ? 'selected' : ''}>
-                                ${p.product.name} - موجودی: ${p.currentStock} - خرید: ${this.formatCurrency(p.product.purchasePrice)}
+                                ${p.product.name} - موجودی: ${p.currentStock}
                             </option>`
                         ).join('')}
                     </select>
                 </div>
-                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
-                    <div class="input-group" style="flex: 1;">
-                        <label>تعداد</label>
-                        <input type="number" name="quantity_${index}" value="${item.quantity}" min="1" max="${availableProducts.find(p => p.product.id === item.productId)?.currentStock || 0}" required>
-                    </div>
-                    <div class="input-group" style="flex: 1;">
-                        <label>قیمت فروش</label>
-                        <input type="number" name="sellingPrice_${index}" value="${item.sellingPrice}" step="0.01" required>
-                    </div>
+                <div class="input-group" style="margin-top: var(--space-sm);">
+                    <label>تعداد</label>
+                    <input type="number" name="quantity_${index}" value="${item.quantity}" min="1" max="${availableProducts.find(p => p.product.id === item.productId)?.currentStock || 0}" required>
                 </div>
                 <div class="input-group" style="margin-top: var(--space-sm);">
                     <label>توضیحات</label>
@@ -1190,24 +1112,17 @@ class AccountingSystem {
         invoice.products.forEach((item, index) => {
             const productId = formData.get(`productId_${index}`);
             const quantity = parseInt(formData.get(`quantity_${index}`));
-            const sellingPrice = parseFloat(formData.get(`sellingPrice_${index}`));
             const description = formData.get(`description_${index}`);
             
-            if (productId && quantity > 0 && sellingPrice > 0) {
+            if (productId && quantity > 0) {
                 const availableProduct = inventory[productId];
                 if (availableProduct && availableProduct.currentStock >= quantity) {
                     const product = availableProduct.product;
-                    const totalAmount = quantity * sellingPrice;
-                    const totalProfit = quantity * (sellingPrice - product.purchasePrice);
                     
                     products.push({
                         productId: productId,
                         productName: product.name,
                         quantity: quantity,
-                        purchasePrice: product.purchasePrice,
-                        sellingPrice: sellingPrice,
-                        totalPrice: totalAmount,
-                        profit: totalProfit,
                         description: description
                     });
                 }
@@ -1219,16 +1134,11 @@ class AccountingSystem {
             return;
         }
         
-        const totalAmount = products.reduce((sum, item) => sum + item.totalPrice, 0);
-        const totalProfit = products.reduce((sum, item) => sum + item.profit, 0);
-        
         // Update invoice
         const invoiceIndex = this.data.salesInvoices.findIndex(i => i.id === invoiceId);
         if (invoiceIndex !== -1) {
             this.data.salesInvoices[invoiceIndex].date = date;
             this.data.salesInvoices[invoiceIndex].products = products;
-            this.data.salesInvoices[invoiceIndex].totalAmount = totalAmount;
-            this.data.salesInvoices[invoiceIndex].totalProfit = totalProfit;
             this.data.salesInvoices[invoiceIndex].updatedAt = new Date().toISOString();
             
             this.saveData();
@@ -1281,7 +1191,7 @@ class AccountingSystem {
         }
         
         const productsOptions = availableProducts.map(item => 
-            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock} - خرید: ${this.formatCurrency(item.product.purchasePrice)}</option>`
+            `<option value="${item.product.id}">${item.product.name} - موجودی: ${item.currentStock}</option>`
         ).join('');
         
         const itemIndex = Date.now(); // Use timestamp for unique index
@@ -1359,95 +1269,7 @@ class AccountingSystem {
         }
     }
 
-    // Report Generation
-    generateReport() {
-        const fromDate = document.getElementById('fromDate').value;
-        const toDate = document.getElementById('toDate').value;
-        
-        if (!fromDate || !toDate) {
-            this.showToast('لطفاً بازه زمانی را انتخاب کنید', 'error');
-            return;
-        }
-        
-        const from = new Date(fromDate);
-        const to = new Date(toDate);
-        
-        // Filter sales invoices in the date range
-        const relevantInvoices = this.data.salesInvoices.filter(invoice => {
-            const invoiceDate = new Date(invoice.date);
-            return invoiceDate >= from && invoiceDate <= to;
-        });
-        
-        const totalSales = relevantInvoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-        const totalProfit = relevantInvoices.reduce((sum, invoice) => sum + invoice.totalProfit, 0);
-        const totalInvoices = relevantInvoices.length;
-        
-        // Product-wise breakdown
-        const productStats = {};
-        relevantInvoices.forEach(invoice => {
-            invoice.products.forEach(item => {
-                if (!productStats[item.productId]) {
-                    productStats[item.productId] = {
-                        name: item.productName,
-                        quantity: 0,
-                        revenue: 0,
-                        profit: 0
-                    };
-                }
-                productStats[item.productId].quantity += item.quantity;
-                productStats[item.productId].revenue += item.totalPrice;
-                productStats[item.productId].profit += item.profit;
-            });
-        });
-        
-        // Render report
-        const container = document.getElementById('reportResults');
-        const statsHTML = `
-            <div class="report-stats">
-                <div class="stat-card">
-                    <div class="stat-value">${totalInvoices}</div>
-                    <div class="stat-label">تعداد فاکتور</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${this.formatCurrency(totalSales)}</div>
-                    <div class="stat-label">مجموع فروش</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: ${totalProfit >= 0 ? 'var(--success)' : 'var(--error)'}">
-                        ${this.formatCurrency(totalProfit)}
-                    </div>
-                    <div class="stat-label">مجموع سود</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${Object.keys(productStats).length}</div>
-                    <div class="stat-label">محصولات فروخته شده</div>
-                </div>
-            </div>
-        `;
-        
-        const productsHTML = Object.values(productStats)
-            .sort((a, b) => b.profit - a.profit)
-            .map(item => `
-                <div class="item-card" style="margin-bottom: var(--space-sm);">
-                    <div class="item-card-header">
-                        <h3 class="item-title">${item.name}</h3>
-                        <span class="item-amount">${this.formatCurrency(item.profit)}</span>
-                    </div>
-                    <div class="item-subtitle">
-                        <span>فروش: ${item.quantity} عدد | درآمد: ${this.formatCurrency(item.revenue)}</span>
-                    </div>
-                </div>
-            `).join('');
-        
-        container.innerHTML = statsHTML + `
-            <h4>جزئیات محصولات</h4>
-            <div class="content-list">
-                ${productsHTML}
-            </div>
-        `;
-        
-        this.showToast('گزارش با موفقیت تهیه شد', 'success');
-    }
+
 
     // Backup Functions
     exportData() {
@@ -1661,27 +1483,13 @@ class AccountingSystem {
             <div class="item-card" style="margin-bottom: var(--space-sm);">
                 <div class="item-card-header">
                     <h3 class="item-title">${item.productName}</h3>
-                    <span class="item-amount">${this.formatCurrency(item.totalPrice)}</span>
                 </div>
                 <div class="item-subtitle">
-                    <span>تعداد: ${item.quantity} × ${this.formatCurrency(item.unitPrice || item.sellingPrice)}</span>
+                    <span>تعداد: ${item.quantity}</span>
                     ${item.description ? `<span>توضیحات: ${item.description}</span>` : ''}
                 </div>
             </div>
         `).join('');
-        
-        const totalHTML = `
-            <div class="stat-card" style="background-color: var(--primary-100); margin-top: var(--space-lg);">
-                <div class="stat-value" style="color: var(--primary-500);">${this.formatCurrency(invoice.totalAmount)}</div>
-                <div class="stat-label">مجموع کل</div>
-                ${type === 'sales' ? `
-                    <div class="stat-value" style="color: ${invoice.totalProfit >= 0 ? 'var(--success)' : 'var(--error)'}; margin-top: var(--space-sm);">
-                        ${this.formatCurrency(invoice.totalProfit)}
-                    </div>
-                    <div class="stat-label">مجموع سود</div>
-                ` : ''}
-            </div>
-        `;
         
         const actionsHTML = type === 'input' ? `
             <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
@@ -1736,8 +1544,6 @@ class AccountingSystem {
         content.innerHTML = `
             <div class="stat-card" style="margin-bottom: var(--space-lg);">
                 <h3 style="margin-bottom: var(--space-sm);">${product.name}</h3>
-                <div class="stat-value">${this.formatCurrency(product.purchasePrice)}</div>
-                <div class="stat-label">قیمت خرید</div>
             </div>
             
             <div class="report-stats">
