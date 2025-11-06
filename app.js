@@ -1323,9 +1323,9 @@ class AccountingSystem {
         `;
         
         // Add to form
-        const form = document.getElementById('editSalesInvoiceForm');
-        const productsSection = form.querySelector('h4').parentNode;
-        productsSection.appendChild(newItem);
+        const form = document.getElementById('salesInvoiceForm');
+        const productsContainer = form.querySelector('#salesInvoiceProducts');
+        productsContainer.appendChild(newItem);
     }
 
     // Product Selection Handlers

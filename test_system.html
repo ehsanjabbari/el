@@ -3,49 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تست سیستم حسابداری - قابلیت چند محصول</title>
+    <title>تست سیستم فاکتور چند محصوله - نسخه اصلاح شده</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body { 
+            font-family: 'Vazirmatn', Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .test-section { 
+            background: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .btn { 
+            background: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+            font-family: 'Vazirmatn', Arial, sans-serif;
+        }
+        .btn:hover { background: #45a049; }
+        .btn-danger { background: #f44336; }
+        .btn-danger:hover { background: #da190b; }
+        .btn-info { background: #2196F3; }
+        .btn-info:hover { background: #1976D2; }
+        .result { 
+            margin-top: 15px; 
+            padding: 15px; 
+            background: #e8f5e8; 
+            border-radius: 5px; 
+            border: 1px solid #4CAF50; 
+        }
+        .error { 
+            background: #ffe8e8; 
+            border-color: #f44336; 
+            color: #d32f2f; 
+        }
+        .status-ok { color: #4CAF50; }
+        .status-error { color: #f44336; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎉 سیستم حسابداری ساده شده</h1>
-        <h2>تست قابلیت فاکتورهای چند محصوله</h2>
-        
-        <div style="background: var(--success); color: white; padding: var(--space-md); border-radius: var(--border-radius); margin: var(--space-lg) 0;">
-            ✅ <strong>ویژگی‌های جدید:</strong>
-            <ul style="margin: var(--space-sm) 0; padding-right: var(--space-lg);">
-                <li>فاکتورهای ورودی و خروجی قابلیت اضافه کردن چندین محصول را دارند</li>
-                <li>تمام فیلدهای قیمت حذف شده‌اند</li>
-                <li>سیستم فقط بر اساس تعداد کار می‌کند</li>
-                <li>تب گزارش‌ها حذف شده است</li>
-                <li>امکان افزودن و حذف محصولات در هر فاکتور</li>
-            </ul>
-        </div>
-
-        <div style="background: var(--info); color: white; padding: var(--space-md); border-radius: var(--border-radius); margin: var(--space-lg) 0;">
-            💡 <strong>نحوه استفاده:</strong>
-            <ol style="margin: var(--space-sm) 0; padding-right: var(--space-lg);">
-                <li>ابتدا محصولات مورد نیاز خود را در بخش محصولات اضافه کنید</li>
-                <li>برای ورود محصولات از "فاکتور ورودی" استفاده کنید و چندین محصول اضافه کنید</li>
-                <li>برای فروش محصولات از "فاکتور فروش" استفاده کنید و چندین محصول انتخاب کنید</li>
-                <li>می‌توانید هر زمان که خواستید محصول جدید به فاکتور اضافه کنید</li>
-            </ol>
-        </div>
-
-        <div style="text-align: center; margin-top: var(--space-xl);">
-            <a href="index.html" class="btn-primary" style="padding: var(--space-md) var(--space-lg); text-decoration: none; display: inline-block;">
-                🚀 ورود به سیستم حسابداری
-            </a>
-        </div>
+    <h1>🔧 تست سیستم فاکتور چند محصوله - نسخه اصلاح شده</h1>
+    <p><strong>آخرین اصلاح:</strong> رفع مشکل افزودن محصول در فاکتور فروش</p>
+    
+    <div class="test-section">
+        <h2>📦 تست مدیریت محصولات</h2>
+        <button class="btn" onclick="addTestProduct('محصول تست ۱')">افزودن محصول تست ۱</button>
+        <button class="btn" onclick="addTestProduct('محصول تست ۲')">افزودن محصول تست ۲</button>
+        <button class="btn" onclick="addTestProduct('محصول تست ۳')">افزودن محصول تست ۳</button>
+        <button class="btn-info" onclick="createInputInvoices()">ایجاد فاکتور ورودی برای همه محصولات</button>
+        <button class="btn btn-danger" onclick="clearProducts()">حذف همه محصولات</button>
+        <div id="productsResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📄 تست فاکتور ورودی</h2>
+        <button class="btn" onclick="createInputInvoice()">ایجاد فاکتور ورودی جدید</button>
+        <button class="btn" onclick="addProductToInput()">افزودن محصول به فاکتور ورودی</button>
+        <button class="btn btn-danger" onclick="closeModal()">بستن مودال</button>
+        <div id="inputInvoiceResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💰 تست فاکتور فروش</h2>
+        <button class="btn" onclick="createSalesInvoice()">ایجاد فاکتور فروش جدید</button>
+        <button class="btn" onclick="addProductToSales()">افزودن محصول به فاکتور فروش</button>
+        <button class="btn btn-danger" onclick="closeModal()">بستن مودال</button>
+        <div id="salesInvoiceResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 نمایش داده‌ها</h2>
+        <button class="btn" onclick="showInventory()">نمایش انبار</button>
+        <button class="btn" onclick="showInputInvoices()">نمایش فاکتورهای ورودی</button>
+        <button class="btn" onclick="showSalesInvoices()">نمایش فاکتورهای فروش</button>
+        <button class="btn btn-danger" onclick="clearAllData()">حذف همه داده‌ها</button>
+        <div id="dataResult"></div>
     </div>
 
+    <script src="app.js"></script>
     <script>
-        console.log('سیستم حسابداری ساده شده با قابلیت فاکتورهای چند محصوله آماده است! 🎉');
-        console.log('ویژگی‌های جدید:');
-        console.log('- فاکتورهای ورودی و خروجی چند محصوله');
-        console.log('- حذف تمام فیلدهای قیمت');
-        console.log('- سیستم فقط بر اساس تعداد');
-        console.log('- بدون تب گزارش‌ها');
+        // متدهای تست
+        function addTestProduct(name) {
+            try {
+                // بررسی اینکه آیا محصول از قبل وجود دارد
+                const existingProducts = app.getAllProducts();
+                if (existingProducts.some(p => p.name === name)) {
+                    throw new Error('این محصول قبلاً اضافه شده است');
+                }
+                
+                app.addProduct(name);
+                document.getElementById('productsResult').innerHTML = 
+                    `<div class="result"><span class="status-ok">✅</span> محصول "${name}" با موفقیت اضافه شد</div>`;
+            } catch (error) {
+                document.getElementById('productsResult').innerHTML = 
+                    `<div class="result error"><span class="status-error">❌</span> خطا: ${error.message}</div>`;
+            }
+        }
+        
+        function createInputInvoices() {
+            try {
+                const products = app.getAllProducts();
+                if (products.length === 0) {
+                    throw new Error('هیچ محصولی برای ایجاد فاکتور وجود ندارد');
+                }
+                
+                // ایجاد فاکتور ورودی برای هر محصول
+                let successCount = 0;
+                products.forEach(product => {
+                    try {
+                        const invoice = {
+                            id: Date.now() + Math.random(),
+                            date: new Date().toISOString().split('T')[0],
+                            products: [{
+                                productId: product.id,
+                                productName: product.name,
+                                quantity: 10,
+                                description: 'محصول تست'
+                            }],
+                            createdAt: new Date().toISOString()
+                        };
+                        
+                        const invoices = JSON.parse(localStorage.getItem('inputInvoices') || '[]');
+                        invoices.push(invoice);
+                        localStorage.setItem('inputInvoices', JSON.stringify(invoices));
+                        
+                        // به روزرسانی انبار
+                        const inventory = JSON.parse(localStorage.getItem('inventory') || '{}');
+                        if (!inventory[product.id]) {
+                            inventory[product.id] = { product: product, currentStock: 0, totalAdded: 0, totalSold: 0 };
+                        }
+                        inventory[product.id].currentStock += 10;
+                        inventory[product.id].totalAdded += 10;
+                        localStorage.setItem('inventory', JSON.stringify(inventory));
+                        
+                        successCount++;
+                    } catch (error) {
+                        console.error('Error creating invoice for', product.name, error);
+                    }
+                });
+                
+                document.getElementById('productsResult').innerHTML = 
+                    `<div class="result"><span class="status-ok">✅</span> ${successCount} فاکتور ورودی برای محصولات ایجاد شد</div>`;
+            } catch (error) {
+                document.getElementById('productsResult').innerHTML = 
+                    `<div class="result error"><span class="status-error">❌</span> خطا: ${error.message}</div>`;
+            }
+        }
+        
+        function clearProducts() {
+            localStorage.removeItem('products');
+            localStorage.removeItem('inventory');
+            document.getElementById('productsResult').innerHTML = 
+                '<div class="result"><span class="status-ok">🗑️</span> همه محصولات و انبار حذف شدند</div>';
+        }
+        
+        function createInputInvoice() {
+            try {
+                app.showAddInputInvoiceModal();
+                document.getElementById('inputInvoiceResult').innerHTML = 
+                    '<div class="result"><span class="status-ok">✅</span> فاکتور ورودی ایجاد شد - حالا می‌توانید محصولات اضافه کنید</div>';
+            } catch (error) {
+                document.getElementById('inputInvoiceResult').innerHTML = 
+                    `<div class="result error"><span class="status-error">❌</span> خطا: ${error.message}</div>`;
+            }
+        }
+        
+        function addProductToInput() {
+            try {
+                app.addInputInvoiceItem();
+                document.getElementById('inputInvoiceResult').innerHTML = 
+                    '<div class="result"><span class="status-ok">✅</span> محصول جدید به فاکتور ورودی اضافه شد</div>';
+            } catch (error) {
+                document.getElementById('inputInvoiceResult').innerHTML = 
+                    `<div class="result error"><span class="status-error">❌</span> خطا: ${error.message}</div>`;
+            }
+        }
+        
+        function createSalesInvoice() {
+            try {
+                app.showAddSalesInvoiceModal();
+                document.getElementById('salesInvoiceResult').innerHTML = 
+                    '<div class="result"><span class="status-ok">✅</span> فاکتور فروش ایجاد شد - حالا می‌توانید محصولات اضافه کنید</div>';
+            } catch (error) {
+                document.getElementById('salesInvoiceResult').innerHTML = 
+                    `<div class="result error"><span class="status-error">❌</span> خطا: ${error.message}</div>`;
+            }
+        }
+        
+        function addProductToSales() {
+            try {
+                app.addSalesInvoiceItem();
+                document.getElementById('salesInvoiceResult').innerHTML = 
+                    '<div class="result"><span class="status-ok">✅</span> محصول جدید به فاکتور فروش اضافه شد</div>';
+            } catch (error) {
+                document.getElementById('salesInvoiceResult').innerHTML = 
+                    `<div class="result error"><span class="status-error">❌</span> خطا: ${error.message}</div>`;
+            }
+        }
+        
+        function closeModal() {
+            try {
+                app.hideModal();
+                document.getElementById('inputInvoiceResult').innerHTML = 
+                    '<div class="result">❌ مودال بسته شد</div>';
+                document.getElementById('salesInvoiceResult').innerHTML = 
+                    '<div class="result">❌ مودال بسته شد</div>';
+            } catch (error) {
+                console.error('Error closing modal:', error);
+            }
+        }
+        
+        function showInventory() {
+            const inventory = app.getInventory();
+            const products = app.getAllProducts();
+            
+            let html = '<h4>📦 محصولات موجود:</h4><ul>';
+            products.forEach(product => {
+                const stock = inventory[product.id]?.currentStock || 0;
+                html += `<li>${product.name}: ${stock} عدد</li>`;
+            });
+            html += '</ul>';
+            
+            document.getElementById('dataResult').innerHTML = html;
+        }
+        
+        function showInputInvoices() {
+            const invoices = JSON.parse(localStorage.getItem('inputInvoices') || '[]');
+            let html = '<h4>📄 فاکتورهای ورودی:</h4>';
+            invoices.forEach(invoice => {
+                html += `<div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0;">
+                    <strong>فاکتور ${invoice.id.toString().slice(-6)}</strong> - تاریخ: ${invoice.date}
+                    <br>تعداد محصولات: ${invoice.products.length}
+                </div>`;
+            });
+            
+            document.getElementById('dataResult').innerHTML = html || '<p>فاکتور ورودی وجود ندارد</p>';
+        }
+        
+        function showSalesInvoices() {
+            const invoices = JSON.parse(localStorage.getItem('salesInvoices') || '[]');
+            let html = '<h4>💰 فاکتورهای فروش:</h4>';
+            invoices.forEach(invoice => {
+                html += `<div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0;">
+                    <strong>فاکتور ${invoice.id.toString().slice(-6)}</strong> - تاریخ: ${invoice.date}
+                    <br>تعداد محصولات: ${invoice.products.length}
+                </div>`;
+            });
+            
+            document.getElementById('dataResult').innerHTML = html || '<p>فاکتور فروش وجود ندارد</p>';
+        }
+        
+        function clearAllData() {
+            localStorage.clear();
+            document.getElementById('dataResult').innerHTML = 
+                '<div class="result">🗑️ همه داده‌ها حذف شدند</div>';
+        }
+        
+        // بارگذاری اولیه
+        window.addEventListener('load', function() {
+            console.log('🔧 سیستم تست آماده است - نسخه اصلاح شده');
+            console.log('📁 فایل‌های موجود:', ['app.js', 'index.html', 'styles.css', 'test_system.html']);
+            console.log('🔍 آخرین اصلاح: رفع مشکل افزودن محصول در فاکتور فروش');
+        });
     </script>
 </body>
 </html>
