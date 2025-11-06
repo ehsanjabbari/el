@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست سیستم</title>
+</head>
+<body>
+    <h1>تست دکمه‌های Modal</h1>
+    
+    <button onclick="showModal()">نمایش Modal</button>
+    
+    <div class="modal-overlay" id="testModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>تست</h3>
+                <button class="modal-close" onclick="hideModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <p>این یک تست است</p>
+                <button onclick="hideModal()">انصراف</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showModal() {
+            document.getElementById('testModal').style.display = 'flex';
+        }
+        
+        function hideModal() {
+            document.getElementById('testModal').style.display = 'none';
+            console.log('دکمه کلیک شد');
+        }
+    </script>
+</body>
+</html>

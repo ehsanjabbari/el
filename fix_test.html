@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست عملکرد دکمه‌ها</title>
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+        }
+        
+        .btn-secondary {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background: #f5f5f5;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .modal-close {
+            float: left;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>تست دکمه‌های Modal</h1>
+    <button onclick="showTestModal()">نمایش تست Modal</button>
+    
+    <div class="modal-overlay" id="testModal" style="display: none;">
+        <div class="modal">
+            <button class="modal-close">&times;</button>
+            <h3>تست عملکرد</h3>
+            <p>آیا دکمه‌های close و انصراف کار می‌کنند؟</p>
+            <button class="btn-secondary" data-action="close-modal">انصراف</button>
+        </div>
+    </div>
+    
+    <script>
+        function showTestModal() {
+            document.getElementById('testModal').style.display = 'flex';
+        }
+        
+        function hideTestModal() {
+            document.getElementById('testModal').style.display = 'none';
+            console.log('Modal بسته شد');
+        }
+        
+        // Event delegation
+        document.addEventListener('click', (e) => {
+            // Handle modal close button
+            if (e.target.closest('.modal-close')) {
+                e.preventDefault();
+                hideTestModal();
+                console.log('دکمه close کلیک شد');
+                return;
+            }
+            
+            // Handle cancel buttons with data-action
+            if (e.target.matches('[data-action="close-modal"]') || 
+                e.target.closest('[data-action="close-modal"]')) {
+                e.preventDefault();
+                hideTestModal();
+                console.log('دکمه انصراف کلیک شد');
+                return;
+            }
+            
+            // Handle overlay click to close
+            if (e.target === e.target.closest('.modal-overlay')) {
+                hideTestModal();
+                console.log('روی overlay کلیک شد');
+            }
+        });
+        
+        // Test by opening modal automatically
+        setTimeout(showTestModal, 1000);
+    </script>
+</body>
+</html>
