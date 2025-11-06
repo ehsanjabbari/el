@@ -175,11 +175,8 @@ class AccountingSystem {
         const today = new Date();
         const persianDate = this.getPersianDate(today);
         
-        // Set today's date as default for input fields
-        const dateInputs = document.querySelectorAll('input[type="date"]');
-        dateInputs.forEach(input => {
-            input.valueAsDate = today;
-        });
+        // Persian date picker is now used instead of input[type="date"]
+        // No need to set date inputs as they are created dynamically
     }
 
     getPersianDate(date) {
@@ -242,6 +239,264 @@ class AccountingSystem {
             var arr = [jy1 + jy2, jm1, gd2];
             return { year: arr[0], month: arr[1], day: arr[2], weekday: (jd + 1) % 7 };
         }
+    }
+
+    toGregorian(jy, jm, jd) {
+        // Persian to Gregorian calendar conversion
+        const j = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        const DaysOfMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        
+        if (jy > 979) {
+            var gy = 1600;
+            var years = jy - 979;
+            var y1 = 365 * years;
+            var addDays = Math.floor(years / 33) * 8 + Math.floor((years % 33) / 4);
+            var total = y1 + addDays;
+            
+            for (var i = 0; i < 11; i++) {
+                total += g_d_m[i];
+            }
+            total += jd - 1;
+            
+            if (years > 32) {
+                total += Math.floor((years - 33) / 4);
+            }
+            
+            var year = gy + Math.floor(total / 365);
+            var dayOfYear = total % 365;
+            
+            if (dayOfYear >= 59) {
+                if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
+                    if (dayOfYear >= 60) dayOfYear--;
+                } else {
+                    dayOfYear--;
+                }
+            }
+            
+            for (var i = 0; i < 12; i++) {
+                if (dayOfYear >= g_d_m[i] + (i > 1 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 1 : 0)) {
+                    if (i === 11 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) && dayOfYear >= g_d_m[i] + 1) {
+                        dayOfYear--;
+                    }
+                    dayOfYear -= g_d_m[i] + (i > 1 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 1 : 0);
+                } else {
+                    return {
+                        year: year,
+                        month: i + 1,
+                        day: dayOfYear + 1,
+                        date: new Date(year, i, dayOfYear + 1)
+                    };
+                }
+            }
+        }
+        return { year: 1600, month: 1, day: 1, date: new Date(1600, 0, 1) };
+    }
+
+    getCurrentPersianDate() {
+        const today = new Date();
+        return this.getPersianDate(today);
+    }
+
+    setPersianDateInput(input) {
+        // Convert current date to Persian and set as placeholder
+        const today = new Date();
+        const persianDate = this.getPersianDate(today);
+        input.placeholder = `مثال: ${persianDate}`;
+        input.value = persianDate;
+    }
+
+    validatePersianDate(dateStr) {
+        // Validate Persian date format YYYY/MM/DD
+        const pattern = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/;
+        const match = dateStr.match(pattern);
+        
+        if (!match) return false;
+        
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]);
+        const day = parseInt(match[3]);
+        
+        if (year < 1300 || year > 1500) return false; // Reasonable Persian year range
+        if (month < 1 || month > 12) return false;
+        if (day < 1 || day > 31) return false;
+        
+        // Check days in month
+        const maxDays = this.getDaysInPersianMonth(year, month);
+        return day <= maxDays;
+    }
+
+    getDaysInPersianMonth(year, month) {
+        const daysInMonth = [0, 31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+        if (month === 12 && this.isPersianLeapYear(year)) {
+            return 30;
+        }
+        return daysInMonth[month];
+    }
+
+    isPersianLeapYear(year) {
+        // Persian leap year calculation
+        const leapYears = [
+            1304, 1308, 1312, 1316, 1320, 1324, 1328, 1332, 1336, 1340,
+            1344, 1348, 1352, 1356, 1360, 1364, 1368, 1372, 1376, 1380,
+            1384, 1388, 1392, 1396, 1400, 1404, 1408, 1412, 1416, 1420
+        ];
+        return leapYears.includes(year);
+    }
+
+    createPersianDatePicker(container, defaultValue = null) {
+        // Create Persian date picker with year/month/day dropdowns
+        const today = new Date();
+        const currentPersian = this.toJalali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        
+        const selectedDate = defaultValue || {
+            year: currentPersian.year,
+            month: currentPersian.month,
+            day: currentPersian.day
+        };
+        
+        const monthNames = [
+            'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+            'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+        ];
+        
+        let html = `
+            <div class="persian-date-picker" style="display: flex; gap: var(--space-sm); align-items: center;">
+                <select name="year" style="flex: 1; padding: var(--space-sm);">
+        `;
+        
+        // Years (1300-1450)
+        for (let year = 1300; year <= 1450; year++) {
+            const selected = year === selectedDate.year ? 'selected' : '';
+            html += `<option value="${year}" ${selected}>${year}</option>`;
+        }
+        
+        html += `
+                </select>
+                <select name="month" style="flex: 1; padding: var(--space-sm);">
+        `;
+        
+        // Months
+        for (let i = 0; i < 12; i++) {
+            const selected = (i + 1) === selectedDate.month ? 'selected' : '';
+            html += `<option value="${i + 1}" ${selected}>${monthNames[i]}</option>`;
+        }
+        
+        html += `
+                </select>
+                <select name="day" style="flex: 1; padding: var(--space-sm);">
+        `;
+        
+        // Days
+        const daysInMonth = this.getDaysInPersianMonth(selectedDate.year, selectedDate.month);
+        for (let day = 1; day <= daysInMonth; day++) {
+            const selected = day === selectedDate.day ? 'selected' : '';
+            html += `<option value="${day}" ${selected}>${day}</option>`;
+        }
+        
+        html += `
+                </select>
+            </div>
+            <script>
+                (function() {
+                    const picker = document.querySelector('.persian-date-picker');
+                    const yearSelect = picker.querySelector('select[name="year"]');
+                    const monthSelect = picker.querySelector('select[name="month"]');
+                    const daySelect = picker.querySelector('select[name="day"]');
+                    
+                    function updateDays() {
+                        const year = parseInt(yearSelect.value);
+                        const month = parseInt(monthSelect.value);
+                        const maxDays = ${this.getDaysInPersianMonth.toString()}(year, month);
+                        
+                        // Clear day options
+                        daySelect.innerHTML = '';
+                        for (let day = 1; day <= maxDays; day++) {
+                            const option = document.createElement('option');
+                            option.value = day;
+                            option.textContent = day;
+                            if (day <= maxDays) {
+                                daySelect.appendChild(option);
+                            }
+                        }
+                    }
+                    
+                    yearSelect.addEventListener('change', updateDays);
+                    monthSelect.addEventListener('change', updateDays);
+                })();
+            </script>
+        `;
+        
+        container.innerHTML = html;
+        
+        // Update the global method
+        if (typeof this.updateDaysInDatePicker === 'undefined') {
+            this.updateDaysInDatePicker = function(pickerElement) {
+                const yearSelect = pickerElement.querySelector('select[name="year"]');
+                const monthSelect = pickerElement.querySelector('select[name="month"]');
+                const daySelect = pickerElement.querySelector('select[name="day"]');
+                
+                const year = parseInt(yearSelect.value);
+                const month = parseInt(monthSelect.value);
+                const maxDays = this.getDaysInPersianMonth(year, month);
+                
+                // Store selected day
+                const currentDay = parseInt(daySelect.value);
+                
+                // Clear and rebuild day options
+                daySelect.innerHTML = '';
+                for (let day = 1; day <= maxDays; day++) {
+                    const option = document.createElement('option');
+                    option.value = day;
+                    option.textContent = day;
+                    if (day <= maxDays) {
+                        daySelect.appendChild(option);
+                    }
+                }
+                
+                // Restore selected day or set to max if invalid
+                if (currentDay <= maxDays) {
+                    daySelect.value = currentDay;
+                } else {
+                    daySelect.value = maxDays;
+                }
+            };
+        }
+    }
+
+    getDateFromPicker(pickerElement) {
+        // Get date value from Persian date picker
+        const yearSelect = pickerElement.querySelector('select[name="year"]');
+        const monthSelect = pickerElement.querySelector('select[name="month"]');
+        const daySelect = pickerElement.querySelector('select[name="day"]');
+        
+        const year = parseInt(yearSelect.value);
+        const month = parseInt(monthSelect.value);
+        const day = parseInt(daySelect.value);
+        
+        // Convert to Persian date string format
+        return `${year}/${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
+    }
+
+    parsePersianDate(persianDateStr) {
+        // Parse Persian date string to components
+        const parts = persianDateStr.split('/');
+        if (parts.length !== 3) return null;
+        
+        return {
+            year: parseInt(parts[0]),
+            month: parseInt(parts[1]),
+            day: parseInt(parts[2])
+        };
+    }
+
+    persianDateToGregorian(persianDateStr) {
+        // Convert Persian date string to Gregorian Date object
+        const parts = this.parsePersianDate(persianDateStr);
+        if (!parts) return null;
+        
+        const gregorian = this.toGregorian(parts.year, parts.month, parts.day);
+        return gregorian.date;
     }
 
     // Product Management
@@ -490,7 +745,7 @@ class AccountingSystem {
             <form id="inputInvoiceForm">
                 <div class="input-group">
                     <label>تاریخ</label>
-                    <input type="date" name="date" required>
+                    <div id="inputInvoiceDatePicker"></div>
                 </div>
                 <div style="margin: var(--space-lg) 0;">
                     <h4>محصولات فاکتور</h4>
@@ -510,9 +765,9 @@ class AccountingSystem {
         
         modal.classList.add('active');
         
-        // Set today's date
-        const dateInput = content.querySelector('input[name="date"]');
-        dateInput.valueAsDate = new Date();
+        // Set up Persian date picker with current date
+        const datePickerContainer = content.querySelector('#inputInvoiceDatePicker');
+        this.createPersianDatePicker(datePickerContainer);
         
         // Add the first product item by default
         this.addInputInvoiceItem();
@@ -550,7 +805,7 @@ class AccountingSystem {
             <form id="salesInvoiceForm">
                 <div class="input-group">
                     <label>تاریخ</label>
-                    <input type="date" name="date" required>
+                    <div id="salesInvoiceDatePicker"></div>
                 </div>
                 <div style="margin: var(--space-lg) 0;">
                     <h4>محصولات فاکتور</h4>
@@ -570,9 +825,9 @@ class AccountingSystem {
         
         modal.classList.add('active');
         
-        // Set today's date
-        const dateInput = content.querySelector('input[name="date"]');
-        dateInput.valueAsDate = new Date();
+        // Set up Persian date picker with current date
+        const datePickerContainer = content.querySelector('#salesInvoiceDatePicker');
+        this.createPersianDatePicker(datePickerContainer);
         
         // Add the first product item by default
         this.addSalesInvoiceItem();
@@ -661,8 +916,16 @@ class AccountingSystem {
     // Form Handlers
     handleInputInvoiceSubmit(e) {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const date = formData.get('date');
+        
+        // Get date from Persian date picker
+        const datePicker = document.querySelector('#inputInvoiceDatePicker .persian-date-picker');
+        const date = this.getDateFromPicker(datePicker);
+        
+        // Validate date
+        if (!this.validatePersianDate(date)) {
+            this.showToast('لطفاً تاریخ معتبر وارد کنید', 'error');
+            return;
+        }
         
         // Collect all products
         const products = [];
@@ -729,8 +992,16 @@ class AccountingSystem {
 
     handleSalesInvoiceSubmit(e) {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const date = formData.get('date');
+        
+        // Get date from Persian date picker
+        const datePicker = document.querySelector('#salesInvoiceDatePicker .persian-date-picker');
+        const date = this.getDateFromPicker(datePicker);
+        
+        // Validate date
+        if (!this.validatePersianDate(date)) {
+            this.showToast('لطفاً تاریخ معتبر وارد کنید', 'error');
+            return;
+        }
         
         // Collect all products
         const products = [];
@@ -915,7 +1186,7 @@ class AccountingSystem {
             <form id="editInputInvoiceForm">
                 <div class="input-group">
                     <label>تاریخ</label>
-                    <input type="date" name="date" value="${invoice.date}" required>
+                    <div id="editInputInvoiceDatePicker"></div>
                 </div>
                 <div style="margin: var(--space-lg) 0;">
                     <h4>محصولات فاکتور</h4>
@@ -933,6 +1204,15 @@ class AccountingSystem {
         
         modal.classList.add('active');
         
+        // Set up Persian date picker with invoice date
+        const datePickerContainer = content.querySelector('#editInputInvoiceDatePicker');
+        const invoiceDateParts = this.parsePersianDate(invoice.date);
+        if (invoiceDateParts) {
+            this.createPersianDatePicker(datePickerContainer, invoiceDateParts);
+        } else {
+            this.createPersianDatePicker(datePickerContainer);
+        }
+        
         // Set up form submission
         content.querySelector('#editInputInvoiceForm').addEventListener('submit', (e) => {
             this.handleEditInputInvoiceSubmit(e, invoiceId);
@@ -941,8 +1221,16 @@ class AccountingSystem {
 
     handleEditInputInvoiceSubmit(e, invoiceId) {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const date = formData.get('date');
+        
+        // Get date from Persian date picker
+        const datePicker = document.querySelector('#editInputInvoiceDatePicker .persian-date-picker');
+        const date = this.getDateFromPicker(datePicker);
+        
+        // Validate date
+        if (!this.validatePersianDate(date)) {
+            this.showToast('لطفاً تاریخ معتبر وارد کنید', 'error');
+            return;
+        }
         
         // Collect all products
         const products = [];
@@ -1175,7 +1463,7 @@ class AccountingSystem {
             <form id="editSalesInvoiceForm">
                 <div class="input-group">
                     <label>تاریخ</label>
-                    <input type="date" name="date" value="${invoice.date}" required>
+                    <div id="editSalesInvoiceDatePicker"></div>
                 </div>
                 <div style="margin: var(--space-lg) 0;">
                     <h4>محصولات فاکتور</h4>
@@ -1193,6 +1481,15 @@ class AccountingSystem {
         
         modal.classList.add('active');
         
+        // Set up Persian date picker with invoice date
+        const datePickerContainer = content.querySelector('#editSalesInvoiceDatePicker');
+        const invoiceDateParts = this.parsePersianDate(invoice.date);
+        if (invoiceDateParts) {
+            this.createPersianDatePicker(datePickerContainer, invoiceDateParts);
+        } else {
+            this.createPersianDatePicker(datePickerContainer);
+        }
+        
         // Set up form submission
         content.querySelector('#editSalesInvoiceForm').addEventListener('submit', (e) => {
             this.handleEditSalesInvoiceSubmit(e, invoiceId);
@@ -1201,8 +1498,16 @@ class AccountingSystem {
 
     handleEditSalesInvoiceSubmit(e, invoiceId) {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const date = formData.get('date');
+        
+        // Get date from Persian date picker
+        const datePicker = document.querySelector('#editSalesInvoiceDatePicker .persian-date-picker');
+        const date = this.getDateFromPicker(datePicker);
+        
+        // Validate date
+        if (!this.validatePersianDate(date)) {
+            this.showToast('لطفاً تاریخ معتبر وارد کنید', 'error');
+            return;
+        }
         
         // Collect all products
         const products = [];
