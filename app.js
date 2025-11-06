@@ -797,6 +797,76 @@ class AccountingSystem {
         }
     }
 
+    // Product Management
+    editProduct(productId) {
+        const product = this.getProductById(productId);
+        if (!product) {
+            this.showToast('محصول یافت نشد', 'error');
+            return;
+        }
+
+        const modal = document.getElementById('modalOverlay');
+        const title = document.getElementById('modalTitle');
+        const content = document.getElementById('modalContent');
+        
+        title.textContent = 'ویرایش محصول';
+        
+        content.innerHTML = `
+            <form id="editProductForm">
+                <div class="input-group">
+                    <label>نام محصول</label>
+                    <input type="text" name="name" value="${product.name}" required>
+                </div>
+                <div class="input-group">
+                    <label>قیمت خرید</label>
+                    <input type="number" name="price" value="${product.purchasePrice}" step="0.01" required>
+                </div>
+                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+                    <button type="submit" class="btn-primary" style="flex: 1;">ذخیره تغییرات</button>
+                    <button type="button" class="btn-secondary" data-action="close-modal" style="flex: 1;">انصراف</button>
+                </div>
+            </form>
+        `;
+        
+        modal.classList.add('active');
+        
+        // Set up form submission
+        content.querySelector('#editProductForm').addEventListener('submit', (e) => {
+            this.handleEditProductSubmit(e, productId);
+        });
+    }
+
+    handleEditProductSubmit(e, productId) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const updatedName = formData.get('name');
+        const updatedPrice = parseFloat(formData.get('price'));
+        
+        if (!updatedName || !updatedPrice) {
+            this.showToast('لطفاً تمام فیلدها را پر کنید', 'error');
+            return;
+        }
+        
+        // Update product
+        const productIndex = this.data.products.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+            this.data.products[productIndex].name = updatedName;
+            this.data.products[productIndex].purchasePrice = updatedPrice;
+            this.data.products[productIndex].updatedAt = new Date().toISOString();
+            
+            this.saveData();
+            this.showToast('محصول با موفقیت به‌روزرسانی شد', 'success');
+            this.hideModal();
+            
+            // Refresh the products modal
+            setTimeout(() => {
+                this.showManageInventoryModal();
+            }, 300);
+        } else {
+            this.showToast('خطا در به‌روزرسانی محصول', 'error');
+        }
+    }
+
     // Product Selection Handlers
     onProductSelect(select) {
         const newProductFields = document.getElementById('newProductFields');

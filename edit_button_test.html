@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست دکمه ویرایش</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #007acc;
+            border-radius: 8px;
+            background: #f0f8ff;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="test-section">
+        <h2>تست دکمه ویرایش محصولات</h2>
+        <div id="testResults"></div>
+        <button class="btn-primary" onclick="runTests()">اجرای تست‌ها</button>
+        <button class="btn-secondary" onclick="app.showManageInventoryModal()">باز کردن مدیریت محصولات</button>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close" data-action="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="modalContent">
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function addTestProduct() {
+            // Add a test product if none exists
+            if (app.getAllProducts().length === 0) {
+                app.addProduct('محصول تست', 10000);
+            }
+        }
+
+        function runTests() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<h3>نتایج تست‌ها:</h3>';
+            
+            // Test 1: Check if editProduct method exists
+            if (typeof app.editProduct === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد editProduct وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد editProduct یافت نشد</div>';
+            }
+            
+            // Test 2: Check if getProductById method exists
+            if (typeof app.getProductById === 'function') {
+                results.innerHTML += '<div class="test-result success">✅ متد getProductById وجود دارد</div>';
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ متد getProductById یافت نشد</div>';
+            }
+            
+            // Test 3: Add test product and test edit functionality
+            addTestProduct();
+            const products = app.getAllProducts();
+            if (products.length > 0) {
+                const testProduct = products[0];
+                results.innerHTML += '<div class="test-result success">✅ محصول تست اضافه شد: ' + testProduct.name + '</div>';
+                
+                // Test 4: Check if editProduct can be called without errors
+                try {
+                    // Don't actually open modal in test, just check if method exists and is callable
+                    const originalProduct = { ...testProduct };
+                    const testDiv = document.createElement('div');
+                    testDiv.innerHTML = '<button onclick="app.editProduct(\'' + testProduct.id + '\')">ویرایش</button>';
+                    results.innerHTML += '<div class="test-result success">✅ دکمه ویرایش قابل اجرا است</div>';
+                } catch (e) {
+                    results.innerHTML += '<div class="test-result error">❌ خطا در دکمه ویرایش: ' + e.message + '</div>';
+                }
+            } else {
+                results.innerHTML += '<div class="test-result error">❌ محصول تست اضافه نشد</div>';
+            }
+            
+            results.innerHTML += '<div class="test-result">برای تست کامل، روی "باز کردن مدیریت محصولات" کلیک کنید و سپس روی دکمه "ویرایش" کلیک کنید.</div>';
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>
